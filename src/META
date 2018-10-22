@@ -1,0 +1,11 @@
+# OASIS_START
+# DO NOT EDIT (digest: 1cec8c5bf463a38f7ab91aa45be4dcfb)
+version = "0.1.0"
+description = "example"
+archive(byte) = "dfa.cma"
+archive(byte, plugin) = "dfa.cma"
+archive(native) = "dfa.cmxa"
+archive(native, plugin) = "dfa.cmxs"
+exists_if = "dfa.cma"
+# OASIS_STOP
+
