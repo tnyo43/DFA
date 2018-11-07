@@ -20,6 +20,8 @@ let states = [
     Dfa.make_state "q4" false ["q3"; "q4"];
 ];;
 
+let states' = Dfa.states_to_states' states;;
+
 let state_test =
   "stateの各値を取得する" >::
     (fun _ ->
@@ -79,6 +81,51 @@ let normalize_legex_test =
       assert_equal (Dfa.Empty) (Dfa.normalize_legex (Dfa.Concat [Dfa.Union [Alpha One; Alpha Zero]; Dfa. Empty]))
     )
 
+let remove_state_test =
+  "自己ループが含まれる表現をkleene starを用いて書き換える。ただし、stateが出てくるの和の要素の先頭で、積に限定される" >::
+    (fun _ ->
+      assert_equal
+        (Dfa.Concat [Dfa.Alpha Zero; Dfa.Star (Dfa.Alpha One)])
+        (Dfa.remove_state_legex "a"
+          (Dfa.Union [Dfa.Alpha Zero; Dfa.Concat [Dfa.State "a"; Dfa.Alpha One]])
+        );
+      assert_equal
+        (Dfa.Concat [Dfa.Alpha Zero; Dfa.Star (Dfa.Union [Dfa.Concat [Alpha Zero; State "x"]; Dfa.State "b"; Dfa.State "c"])])
+        (Dfa.remove_state_legex "a"
+          (Dfa.Concat [Dfa.Alpha Zero; Dfa.Star (Dfa.Union [Dfa.Concat [Alpha Zero; State "x"]; Dfa.State "b"; Dfa.State "c"])])
+        );
+    )
+;;
+
+let state_replace_test =
+  "state'のlegexに自己ループを含むなら含まないように変形する" >::
+    (fun _ ->
+      assert_equal
+        (Dfa.S' ("q4", false, ["q3"; "q4"], Dfa.Concat [Dfa.State "q2"; Dfa.Alpha Zero; Dfa.Star (Dfa.Alpha One)]))
+        (Dfa.state_replace_itself
+          (Dfa.S' ("q4", false, ["q3"; "q4"], Dfa.Union [Dfa.Concat [Dfa.State "q2"; Dfa.Alpha Zero]; Dfa.Concat [Dfa.State "q4"; Dfa.Alpha One]]))
+        );
+      assert_equal
+        (Dfa.S' ("q2", false, ["q4"; "q0"], Dfa.Union [Dfa.Concat [Dfa.State "q1"; Dfa.Alpha Zero]; Dfa.Concat [Dfa.State "q3"; Dfa.Alpha One]]))
+        (Dfa.state_replace_itself
+          (Dfa.S' ("q2", false, ["q4"; "q0"], Dfa.Union [Dfa.Concat [Dfa.State "q1"; Dfa.Alpha Zero]; Dfa.Concat [Dfa.State "q3"; Dfa.Alpha One]]))
+        );
+    )
+
+let substitute_legex_test =
+  "legexのstateに別のstateを代入する" >::
+    (fun _ ->
+      assert_equal
+        (Dfa.Union [Dfa.Concat [Dfa.State "q1"; Alpha Zero; Alpha Zero]; Dfa.Concat [Dfa.State "q2"; Dfa.Alpha One; Dfa.Alpha Zero]; Dfa.Concat [Dfa.State "q3"; Dfa.Alpha One]])
+        (Dfa.substitute_legex
+          (Dfa.Union [Dfa.Concat [Dfa.State "q4"; Dfa.Alpha Zero]; Dfa.Concat [Dfa.State "q3"; Dfa.Alpha One]])
+          (Dfa.State "q4")
+          (Dfa.Union [Dfa.Concat [Dfa.State "q1"; Dfa.Alpha Zero]; Dfa.Concat [State "q2"; Dfa.Alpha One]])
+        );
+    )
+;;
+
+
 let tests =
   "all_tests" >::: [ 
     alpha_num_test;
@@ -88,4 +135,7 @@ let tests =
     sort_legex_test;
     concatinate_test;
     normalize_legex_test;
+    remove_state_test;
+    state_replace_test;
+    substitute_legex_test
   ];;
